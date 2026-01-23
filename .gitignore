@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.local
+.env.*.local
+dist/
+build/
+*.log
+.DS_Store
+
+.task1-ethers/node_modules
+.task1-ethers/env
