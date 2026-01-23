@@ -4,8 +4,7 @@ const ALCHEMY_SEPOLIA_URL =
   "https://eth-sepolia.g.alchemy.com/v2/It-dPWtmHqFiPOYIjf-zD";
 const provider = new ethers.JsonRpcProvider(ALCHEMY_SEPOLIA_URL);
 
-const privateKey =
-  "adf12e06e253c809667dee9cd80ff432531bee0f10e1b7705112bdc0a738efea";
+const privateKey = "";
 const wallet = new ethers.Wallet(privateKey, provider);
 
 const abiWETH = [
