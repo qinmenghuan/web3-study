@@ -9,3 +9,5 @@ build/
 
 .task1-ethers/node_modules
 .task1-ethers/env
+.task1-viem/node_modules
+.task1-viem/env
