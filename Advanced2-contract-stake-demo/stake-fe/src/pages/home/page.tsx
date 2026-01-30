@@ -1,7 +1,9 @@
 "use client";
 import { motion } from "framer-motion";
-import { useStakeContract } from "../../hooks/useContract";
-import useRewards from "../../hooks/useRewards";
+// import { useStakeContract } from "../../hooks/useContract";
+import { useStakeContract } from "../../hooks/useContractEthers";
+// import useRewards from "../../hooks/useRewards";
+import useRewards from "../../hooks/useRewardsEthers";
 import { useCallback, useState } from "react";
 import { Pid } from "../../utils";
 import { useAccount, useWalletClient, useBalance } from "wagmi";
@@ -20,6 +22,9 @@ import { cn } from "../../utils/cn";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
 import { Card } from "../../components/ui/Card";
+import { BrowserProvider, Contract } from "ethers";
+
+const isEthersV6 = true; // 切换此标志以使用 ethers.js v6 版本
 
 const Home = () => {
   const stakeContract = useStakeContract();
@@ -52,19 +57,44 @@ const Home = () => {
 
     try {
       setLoading(true);
-      const tx = await stakeContract.write.depositETH([], {
-        value: parseUnits(amount, 18),
-      });
-      const res = await waitForTransactionReceipt(data, { hash: tx });
-      console.log({ res });
-      if (res.status === "success") {
-        toast.success("Stake successful!");
-        setAmount("");
-        setLoading(false);
-        refresh(); // 刷新奖励数据
-        return;
+      if (isEthersV6) {
+        const provider = new BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []); // 请求钱包授权
+        const signer = await provider.getSigner();
+        const stakeWithSigner = stakeContract.connect(signer);
+
+        // ethers.js v6
+        const tx = await stakeWithSigner.depositETH({
+          value: parseUnits(amount, 18),
+        });
+        const receipt = await tx.wait();
+        console.log(receipt);
+        if (receipt.status === 1) {
+          toast.success("Stake successful!");
+          setAmount("");
+          setLoading(false);
+          refresh();
+          return;
+        } else {
+          toast.error("Stake failed!");
+        }
+      } else {
+        const tx = await stakeContract.write.depositETH([], {
+          value: parseUnits(amount, 18),
+        });
+
+        const res = await waitForTransactionReceipt(data, { hash: tx });
+        console.log({ res });
+        if (res.status === "success") {
+          toast.success("Stake successful!");
+          setAmount("");
+          setLoading(false);
+          refresh(); // 刷新奖励数据
+          return;
+        }
+        toast.error("Stake failed!");
       }
-      toast.error("Stake failed!");
+      // viem
     } catch (error) {
       setLoading(false);
       toast.error("Transaction failed. Please try again.");
@@ -77,16 +107,33 @@ const Home = () => {
 
     try {
       setClaimLoading(true);
-      const tx = await stakeContract.write.claim([Pid]);
-      const res = await waitForTransactionReceipt(data, { hash: tx });
+      if (isEthersV6) {
+        const provider = new BrowserProvider(window.ethereum);
+        await provider.send("eth_requestAccounts", []); // 请求钱包授权
+        const signer = await provider.getSigner();
+        const stakeWithSigner = stakeContract.connect(signer);
+        const tx = await stakeWithSigner.claim(Pid);
+        const receipt = await tx.wait();
+        if (receipt?.status === 1) {
+          toast.success("Claim successful!");
+          setClaimLoading(false);
+          refresh();
+          return;
+        } else {
+          toast.error("Claim failed!");
+        }
+      } else {
+        const tx = await stakeContract.write.claim([Pid]);
+        const res = await waitForTransactionReceipt(data, { hash: tx });
 
-      if (res.status === "success") {
-        toast.success("Claim successful!");
-        setClaimLoading(false);
-        refresh(); // 刷新奖励数据
-        return;
+        if (res.status === "success") {
+          toast.success("Claim successful!");
+          setClaimLoading(false);
+          refresh(); // 刷新奖励数据
+          return;
+        }
+        toast.error("Claim failed!");
       }
-      toast.error("Claim failed!");
     } catch (error) {
       setClaimLoading(false);
       toast.error("Transaction failed. Please try again.");
