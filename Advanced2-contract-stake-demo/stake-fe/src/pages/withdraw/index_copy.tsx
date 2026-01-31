@@ -1,19 +1,15 @@
-"use client";
-import { motion } from "framer-motion";
-import {
-  useStakeContract,
-  useStakeWriterContract,
-} from "../../hooks/useContractEthers";
+'use client'
+import { motion } from 'framer-motion';
+import { useStakeContract } from "../../hooks/useContract";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pid } from "../../utils";
-import { ProviderNotFoundError, useAccount, useWalletClient } from "wagmi";
-// import { formatUnits, parseUnits } from "viem";
-import { formatUnits, parseUnits, BrowserProvider } from "ethers";
+import { useAccount, useWalletClient } from "wagmi";
+import { formatUnits, parseUnits } from "viem";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { waitForTransactionReceipt } from "viem/actions";
 import { toast } from "react-toastify";
-import { FiArrowUp, FiClock, FiInfo } from "react-icons/fi";
-import { cn } from "../../utils/cn";
+import { FiArrowUp, FiClock, FiInfo } from 'react-icons/fi';
+import { cn } from '../../utils/cn';
 
 export type UserStakeData = {
   staked: string;
@@ -22,38 +18,33 @@ export type UserStakeData = {
 };
 
 const InitData: UserStakeData = {
-  staked: "0",
-  withdrawable: "0",
-  withdrawPending: "0",
+  staked: '0',
+  withdrawable: '0',
+  withdrawPending: '0'
 };
 
 const Withdraw = () => {
   const stakeContract = useStakeContract();
-  const stakeWithSigner = useStakeWriterContract();
   const { address, isConnected } = useAccount();
-  const [amount, setAmount] = useState("");
+  const [amount, setAmount] = useState('');
   const [unstakeLoading, setUnstakeLoading] = useState(false);
   const [withdrawLoading, setWithdrawLoading] = useState(false);
   const { data } = useWalletClient();
   const [userData, setUserData] = useState<UserStakeData>(InitData);
 
-  const isWithdrawable = useMemo(
-    () => Number(userData.withdrawable) > 0 && isConnected,
-    [userData, isConnected],
-  );
+  const isWithdrawable = useMemo(() => Number(userData.withdrawable) > 0 && isConnected, [userData, isConnected]);
 
   const getUserData = useCallback(async () => {
     if (!stakeContract || !address) return;
-    const staked = await stakeContract.stakingBalance(Pid, address);
+    const staked = await stakeContract.read.stakingBalance([Pid, address]);
     // @ts-ignore
-    const [requestAmount, pendingWithdrawAmount] =
-      await stakeContract.withdrawAmount(Pid, address);
+    const [requestAmount, pendingWithdrawAmount] = await stakeContract.read.withdrawAmount([Pid, address]);
     const ava = Number(formatUnits(pendingWithdrawAmount, 18));
     const total = Number(formatUnits(requestAmount, 18));
     setUserData({
       staked: formatUnits(staked as bigint, 18),
       withdrawPending: (total - ava).toFixed(4),
-      withdrawable: ava.toString(),
+      withdrawable: ava.toString()
     });
   }, [stakeContract, address]);
 
@@ -65,68 +56,44 @@ const Withdraw = () => {
 
   const handleUnStake = useCallback(async () => {
     if (!stakeContract || !data) return;
-    if (!stakeWithSigner) {
-      toast.error("Wallet not ready, please wait");
-      return;
-    }
     if (!amount || parseFloat(amount) <= 0) {
-      toast.error("Please enter a valid amount");
+      toast.error('Please enter a valid amount');
       return;
     }
     if (parseFloat(amount) > parseFloat(userData.staked)) {
-      toast.error("Amount cannot be greater than staked amount");
+      toast.error('Amount cannot be greater than staked amount');
       return;
     }
     try {
       setUnstakeLoading(true);
-
-      const tx = await stakeWithSigner.unstake(Pid, parseUnits(amount, 18));
-      const receipt = await tx.wait();
-      // if (!tx || !tx.hash) {
-      //   throw new Error("Transaction hash not found");
-      // }
-      // const receipt = await waitForTransactionReceipt(data, { hash: tx.hash });
-      if (receipt.status === 1) {
-        console.log("Pid", Pid);
-        toast.success("Unstake successful!");
-        setAmount("");
-        setUnstakeLoading(false);
-        getUserData();
-      } else {
-        toast.error("Transaction failed. Please try again.");
-        console.log(receipt.status, "stake-error");
-      }
+      const tx = await stakeContract.write.unstake([Pid, parseUnits(amount, 18)]);
+      console.log('stakeContract', stakeContract)
+      console.log('Pid', Pid)
+      await waitForTransactionReceipt(data, { hash: tx });
+      toast.success('Unstake successful!');
+      setAmount('');
+      setUnstakeLoading(false);
+      getUserData();
     } catch (error) {
       setUnstakeLoading(false);
-      toast.error("Transaction failed. Please try again.");
-      console.log(error, "stake-error");
+      toast.error('Transaction failed. Please try again.');
+      console.log(error, 'stake-error');
     }
   }, [stakeContract, data, amount, userData.staked, getUserData]);
 
   const handleWithdraw = useCallback(async () => {
     if (!stakeContract || !data) return;
-    if (!stakeWithSigner) {
-      toast.error("Wallet not ready, please wait");
-      return;
-    }
     try {
       setWithdrawLoading(true);
-      const tx = await stakeWithSigner.withdraw(Pid);
-      const receipt = await tx.wait();
-      // if (!tx || !tx.hash) {
-      //   throw new Error("Transaction hash not found");
-      // }
-      // const receipt = await waitForTransactionReceipt(data, { hash: tx.hash });
-      if (receipt.status === 1) {
-        toast.success("Withdraw successful!");
-        setWithdrawLoading(false);
-        getUserData();
-      }
-      // await waitForTransactionReceipt(data, { hash: tx });
+      const tx = await stakeContract.write.withdraw([Pid]);
+      await waitForTransactionReceipt(data, { hash: tx });
+      toast.success('Withdraw successful!');
+      setWithdrawLoading(false);
+      getUserData();
     } catch (error) {
       setWithdrawLoading(false);
-      toast.error("Transaction failed. Please try again.");
-      console.log(error, "stake-error");
+      toast.error('Transaction failed. Please try again.');
+      console.log(error, 'stake-error');
     }
   }, [stakeContract, data, getUserData]);
 
@@ -148,7 +115,9 @@ const Withdraw = () => {
         <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-400 bg-clip-text text-transparent mb-4">
           Withdraw
         </h1>
-        <p className="text-gray-600 text-lg">Unstake and withdraw your ETH</p>
+        <p className="text-gray-600 text-lg">
+          Unstake and withdraw your ETH
+        </p>
       </motion.div>
 
       <motion.div
@@ -159,18 +128,9 @@ const Withdraw = () => {
       >
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard
-            label="Staked Amount"
-            value={`${parseFloat(userData.staked).toFixed(4)} ETH`}
-          />
-          <StatCard
-            label="Available to Withdraw"
-            value={`${parseFloat(userData.withdrawable).toFixed(4)} ETH`}
-          />
-          <StatCard
-            label="Pending Withdraw"
-            value={`${parseFloat(userData.withdrawPending).toFixed(4)} ETH`}
-          />
+          <StatCard label="Staked Amount" value={`${parseFloat(userData.staked).toFixed(4)} ETH`} />
+          <StatCard label="Available to Withdraw" value={`${parseFloat(userData.withdrawable).toFixed(4)} ETH`} />
+          <StatCard label="Pending Withdraw" value={`${parseFloat(userData.withdrawPending).toFixed(4)} ETH`} />
         </div>
 
         {/* Unstake Section */}
@@ -188,7 +148,7 @@ const Withdraw = () => {
                 placeholder="0.0"
                 className={cn(
                   "input-field pr-12",
-                  "focus:ring-primary-500 focus:border-primary-500",
+                  "focus:ring-primary-500 focus:border-primary-500"
                 )}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500">
@@ -210,7 +170,7 @@ const Withdraw = () => {
                 disabled={unstakeLoading || !amount}
                 className={cn(
                   "btn-primary w-full flex items-center justify-center space-x-2",
-                  unstakeLoading && "opacity-70 cursor-not-allowed",
+                  unstakeLoading && "opacity-70 cursor-not-allowed"
                 )}
               >
                 {unstakeLoading ? (
@@ -250,9 +210,7 @@ const Withdraw = () => {
 
           <div className="flex items-center text-sm text-gray-500">
             <FiInfo className="mr-1" />
-            <span>
-              After unstaking, you need to wait 20 minutes to withdraw.
-            </span>
+            <span>After unstaking, you need to wait 20 minutes to withdraw.</span>
           </div>
 
           <motion.button
@@ -262,8 +220,7 @@ const Withdraw = () => {
             disabled={!isWithdrawable || withdrawLoading}
             className={cn(
               "btn-primary w-full flex items-center justify-center space-x-2",
-              (!isWithdrawable || withdrawLoading) &&
-                "opacity-70 cursor-not-allowed",
+              (!isWithdrawable || withdrawLoading) && "opacity-70 cursor-not-allowed"
             )}
           >
             {withdrawLoading ? (

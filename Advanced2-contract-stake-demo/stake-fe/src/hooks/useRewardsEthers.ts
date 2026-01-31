@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 // import { formatUnits } from 'viem';
-import { formatUnits } from 'ethers';
+import { Contract, formatUnits } from 'ethers';
 import { useStakeContract } from './useContractEthers';
 import { Pid } from '../utils';
 import { addMetaNodeToMetaMask } from '../utils/metamask';
