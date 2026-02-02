@@ -3,6 +3,8 @@ import { ethers } from "ethers";
 // import WalletProvider from "./wallet-sdk/provider";
 import { WalletProvider, ConnectButton } from "./wallet-sdk";
 import type { Wallet } from "./wallet-sdk/types";
+import metaMaskWallet from "./wallet-sdk/connectors/metamask";
+import coinbaseWallet from "./wallet-sdk/connectors/coinbase";
 
 declare global {
   interface Window {
@@ -41,7 +43,7 @@ const chains = [
   },
 ];
 
-const wallets: Wallet[] = [];
+const wallets: Wallet[] = [metaMaskWallet, coinbaseWallet];
 
 function App() {
   const provider = new ethers.BrowserProvider(window.ethereum);

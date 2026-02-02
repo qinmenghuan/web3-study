@@ -24,8 +24,17 @@ const ConnectButton = ({
   onChainChange,
   onBalanceChange,
 }: ConnectButtonProps) => {
-  const { isConnected, address, chainID, connect, disconnect, ensName, error } =
-    useWallet();
+  const {
+    isConnected,
+    address,
+    chainID,
+    connect,
+    disconnect,
+    ensName,
+    error,
+    openModal,
+    closeModal,
+  } = useWallet();
 
   // 展示余额
   const [balance, setBalance] = useState<string>("");
@@ -59,7 +68,7 @@ const ConnectButton = ({
     return (
       <button
         className={`bg-blue-500 text-white font-bold py-2 px-4 rounded ${sizeClasses[size]} ${className}`}
-        onClick={handleConnect}
+        onClick={openModal}
       >
         {label}
       </button>

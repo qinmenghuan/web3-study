@@ -1,9 +1,17 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+} from "react";
 import type {
   WalletContextValue,
   WalletProviderProps,
   WalletState,
+  Wallet,
 } from "../types";
+import WalletModal from "../components/WalletModal";
 
 const WalletContext = createContext<WalletContextValue>({
   connect: async () => {},
@@ -26,6 +34,7 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
   chains,
   provider,
   autoConnect,
+  wallets,
 }) => {
   const [state, setState] = useState<WalletState>({
     address: "",
@@ -38,12 +47,48 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
     provider,
   });
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const walletsMap = useMemo(() => {
+    return wallets.reduce(
+      (map, wallet) => {
+        map[wallet.id] = wallet;
+        return map;
+      },
+      {} as Record<string, Wallet>,
+    );
+  }, [wallets]);
+
   const value: WalletContextValue = {
     ...state,
-    connect: async () => {},
+    connect: async (walletId: string) => {
+      const wallet = walletsMap[walletId];
+      if (!wallet) {
+        throw new Error(`Wallet with id ${walletId} not found`);
+      }
+      try {
+        await wallet.connector();
+        setState({
+          ...state,
+          isConnected: true,
+          address: wallet.address,
+          chainID: wallet.chainID,
+        });
+      } catch (error) {
+        setState({
+          ...state,
+          error: error as Error,
+        });
+      }
+    },
     disconnect: async () => {},
     switchChain: async () => {},
-    openModal: function (): void {},
+    openModal: function (): void {
+      setModalOpen(true);
+    },
+    closeModal: function (): void {
+      console.log("modal close");
+      setModalOpen(false);
+    },
   };
 
   useEffect(() => {
@@ -53,7 +98,17 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
   }, []);
 
   return (
-    <WalletContext.Provider value={value}>{children}</WalletContext.Provider>
+    <WalletContext.Provider value={value}>
+      {children}
+      <WalletModal
+        isOpen={modalOpen}
+        onClose={value.closeModal}
+        wallets={wallets}
+        onSelectWallet={value.connect}
+        connecting={value.isConnecting}
+        error={value.error}
+      />
+    </WalletContext.Provider>
   );
 };
 

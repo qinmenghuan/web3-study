@@ -1,4 +1,3 @@
-
 export interface WalletState {
   address: string | null;
   chainID: number | null;
@@ -10,7 +9,7 @@ export interface WalletState {
   provider: any;
 }
 
-export interface WalletContextValue extends WalletState { 
+export interface WalletContextValue extends WalletState {
   connect: () => Promise<void>;
   disconnect: () => Promise<void>;
   switchChain: () => Promise<void>;
@@ -30,23 +29,23 @@ export type Chain = {
   blockExplorer: {
     name: string;
     url: string;
-  }
-}
+  };
+};
 
 export type WalletProviderProps = {
-  children: React.ReactNode,
-  chains: Chain[],
-  wallets: Wallet[],
-  autoConnect?: boolean,
-  provider?: any,
-}
+  children: React.ReactNode;
+  chains: Chain[];
+  wallets: Wallet[];
+  autoConnect?: boolean;
+  provider?: any;
+};
 
-export interface Wallet { 
-  id: string,
-  name: string,
-  icon: string,
-  connector: () => Promise<any>,
-  description?: string,
-  install?: boolean,
-  downloadLink: string,
+export interface Wallet {
+  id: string;
+  name: string;
+  icon: string;
+  connector: () => Promise<any>;
+  description?: string;
+  installed?: boolean;
+  downloadLink: string;
 }
