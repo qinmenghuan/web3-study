@@ -80,7 +80,9 @@ const ConnectButton = ({
     <div>
       <p>Connected to wallet: {address}</p>
       <p>chainID: {chainID}</p>
-      <p>{showBalance && <p>Balance: {Number(balance).toFixed(4)} ETH</p>}</p>
+      {showBalance && balance && (
+        <p>Balance: {Number(balance).toFixed(4)} ETH</p>
+      )}
       <button
         className={`bg-blue-500 text-white font-bold py-2 px-4 rounded ${sizeClasses[size]} ${className}`}
         onClick={handleDisconnect}
