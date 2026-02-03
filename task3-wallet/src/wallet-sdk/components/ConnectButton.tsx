@@ -16,7 +16,7 @@ interface ConnectButtonProps {
 
 const ConnectButton = ({
   label = "Connect Wallet",
-  showBalance = false,
+  showBalance = true,
   size = "md",
   className = "",
   onConnect,
@@ -80,7 +80,7 @@ const ConnectButton = ({
     <div>
       <p>Connected to wallet: {address}</p>
       <p>chainID: {chainID}</p>
-      <p>balance: {balance}</p>
+      <p>{showBalance && <p>Balance: {Number(balance).toFixed(4)} ETH</p>}</p>
       <button
         className={`bg-blue-500 text-white font-bold py-2 px-4 rounded ${sizeClasses[size]} ${className}`}
         onClick={handleDisconnect}
