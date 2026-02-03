@@ -12,6 +12,7 @@ import type {
   Wallet,
 } from "../types";
 import WalletModal from "../components/WalletModal";
+import { formatEther } from "ethers";
 
 const WalletContext = createContext<WalletContextValue>({
   connect: async () => {},
@@ -45,9 +46,13 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
     error: null,
     chains,
     provider,
+    balance: "",
   });
 
+  // 弹框状态
   const [modalOpen, setModalOpen] = useState(false);
+
+  // 钱包id到钱包信息的映射
   const walletsMap = useMemo(() => {
     return wallets.reduce(
       (map, wallet) => {
@@ -66,13 +71,23 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
         throw new Error(`Wallet with id ${walletId} not found`);
       }
       try {
-        await wallet.connector();
+        // 调用对应wallet的connector方法进行连接
+        const { address, chainId, provider } = await wallet.connector();
+
+        // 连接后获取余额
+        const balanceBN = await provider.getBalance(address);
+        const balance = formatEther(balanceBN);
+        console.log("Wallet connected:", { address, chainId });
         setState({
           ...state,
           isConnected: true,
-          address: wallet.address,
-          chainID: wallet.chainID,
+          address: address,
+          chainID: chainId,
+          balance: balance,
         });
+
+        // 关闭modal
+        setModalOpen(false);
       } catch (error) {
         setState({
           ...state,
@@ -93,9 +108,31 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
 
   useEffect(() => {
     if (autoConnect) {
+      // TODO: 暂时不自动连接
       // value.connect();
     }
-  }, []);
+
+    // 判断状态
+    if (!state.provider || !state.address) return;
+    // 更新余额
+    const refreshBalance = async () => {
+      const balanceBN = await state.provider.getBalance(state.address);
+      setState((prev) => ({
+        ...prev,
+        balance: formatEther(balanceBN),
+      }));
+    };
+
+    refreshBalance();
+
+    window.addEventListener("wallet_accounts_changed", refreshBalance);
+    window.addEventListener("wallet_chain_changed", refreshBalance);
+
+    return () => {
+      window.removeEventListener("wallet_accounts_changed", refreshBalance);
+      window.removeEventListener("wallet_chain_changed", refreshBalance);
+    };
+  }, [state.provider, state.address, state.chainID]);
 
   return (
     <WalletContext.Provider value={value}>

@@ -7,6 +7,7 @@ export interface WalletState {
   error: Error | null;
   chains: Chain[];
   provider: any;
+  balance?: string; // 可选的余额字段
 }
 
 export interface WalletContextValue extends WalletState {

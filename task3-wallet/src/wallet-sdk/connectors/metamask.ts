@@ -43,10 +43,17 @@ const connectMetamask = async (): Promise<any> => {
       );
     });
 
+    console.log("Connected to MetaMask:", {
+      accounts,
+      address,
+      chainId,
+    });
+
     return {
       accounts,
       chainId,
       address,
+      provider,
     };
   } catch (error: Error) {
     throw new Error(error.message || "Failed to connect to MetaMask");

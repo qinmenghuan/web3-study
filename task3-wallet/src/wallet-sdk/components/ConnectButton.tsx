@@ -28,6 +28,7 @@ const ConnectButton = ({
     isConnected,
     address,
     chainID,
+    balance,
     connect,
     disconnect,
     ensName,
@@ -37,7 +38,7 @@ const ConnectButton = ({
   } = useWallet();
 
   // 展示余额
-  const [balance, setBalance] = useState<string>("");
+  // const [balance, setBalance] = useState<string>("");
 
   // 样式
   const sizeClasses = {
@@ -76,12 +77,17 @@ const ConnectButton = ({
   }
 
   return (
-    <button
-      className={`bg-blue-500 text-white font-bold py-2 px-4 rounded ${sizeClasses[size]} ${className}`}
-      onClick={handleDisconnect}
-    >
-      {label}
-    </button>
+    <div>
+      <p>Connected to wallet: {address}</p>
+      <p>chainID: {chainID}</p>
+      <p>balance: {balance}</p>
+      <button
+        className={`bg-blue-500 text-white font-bold py-2 px-4 rounded ${sizeClasses[size]} ${className}`}
+        onClick={handleDisconnect}
+      >
+        {label}
+      </button>
+    </div>
   );
 };
 
