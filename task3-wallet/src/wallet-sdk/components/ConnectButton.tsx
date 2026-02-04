@@ -1,7 +1,7 @@
 import React from "react";
 import { useState, useEffect } from "react";
 import { useWallet } from "../provider";
-import ChainSelect from "./ChainSelect";
+import NetworkSelect from "./NetworkSelect";
 
 interface ConnectButtonProps {
   label?: string;
@@ -79,7 +79,7 @@ const ConnectButton = ({
 
   return (
     <div>
-      <ChainSelect />
+      <NetworkSelect />
       <p>Connected to wallet: {address}</p>
       <p>chainID: {chainID}</p>
       {showBalance && balance && (

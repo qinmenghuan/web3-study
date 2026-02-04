@@ -96,7 +96,36 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
       }
     },
     disconnect: async () => {},
-    switchChain: async () => {},
+    switchChain: async (targetChainId: number) => {
+      console.log("targetChainId111:" + targetChainId);
+      if (!window.ethereum || !state.isConnected) {
+        throw new Error("Wallet not connected");
+      }
+
+      const chain = chains.find((item) => item.id === targetChainId);
+      if (!chain) {
+        throw new Error("Unsupported chain");
+      }
+
+      try {
+        console.log("targetChainId" + `0x${targetChainId.toString(16)}`);
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+        });
+
+        setState((prev) => ({
+          ...prev,
+          chainID: targetChainId,
+        }));
+
+        // TODO: 更新state其他信息
+      } catch (error: any) {
+        console.log("error:", error);
+        // 链不存在
+        throw error;
+      }
+    },
     openModal: function (): void {
       setModalOpen(true);
     },
