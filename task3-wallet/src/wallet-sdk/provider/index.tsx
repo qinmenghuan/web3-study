@@ -98,19 +98,21 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
     disconnect: async () => {},
     switchChain: async (targetChainId: number) => {
       console.log("targetChainId111:" + targetChainId);
+      console.log("targetChainId111:" + typeof targetChainId);
       if (!window.ethereum || !state.isConnected) {
         throw new Error("Wallet not connected");
       }
 
-      const chain = chains.find((item) => item.id === targetChainId);
-      if (!chain) {
-        throw new Error("Unsupported chain");
-      }
+      // const chain = chains.find((item) => item.id === targetChainId);
+      // if (!chain) {
+      //   throw new Error("Unsupported chain");
+      // }
 
       // 切换以太网的网络
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+        // params: [{ targetChainId }],
       });
     },
     openModal: function (): void {
@@ -128,7 +130,10 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
       // value.connect();
     }
 
-    if (!window.ethereum) return;
+    if (!window.ethereum) {
+      console.log("window.ethereum 不存在");
+      return;
+    }
 
     // 判断状态
     if (!state.provider || !state.address) return;
@@ -155,6 +160,7 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
     // 更新链的id
     const handleChainChanged = (chainIdHex: string) => {
       const newChainId = parseInt(chainIdHex, 16);
+      console.log("handleChainChanged:", newChainId);
       const newProvider = new ethers.BrowserProvider(window.ethereum);
       setState((prev) => ({
         ...prev,
