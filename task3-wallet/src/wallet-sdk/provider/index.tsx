@@ -12,7 +12,7 @@ import type {
   Wallet,
 } from "../types";
 import WalletModal from "../components/WalletModal";
-import { formatEther } from "ethers";
+import { formatEther, ethers } from "ethers";
 
 const WalletContext = createContext<WalletContextValue>({
   connect: async () => {},
@@ -107,24 +107,11 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
         throw new Error("Unsupported chain");
       }
 
-      try {
-        console.log("targetChainId" + `0x${targetChainId.toString(16)}`);
-        await window.ethereum.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: `0x${targetChainId.toString(16)}` }],
-        });
-
-        setState((prev) => ({
-          ...prev,
-          chainID: targetChainId,
-        }));
-
-        // TODO: 更新state其他信息
-      } catch (error: any) {
-        console.log("error:", error);
-        // 链不存在
-        throw error;
-      }
+      // 切换以太网的网络
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+      });
     },
     openModal: function (): void {
       setModalOpen(true);
@@ -141,15 +128,23 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
       // value.connect();
     }
 
+    if (!window.ethereum) return;
+
     // 判断状态
     if (!state.provider || !state.address) return;
     // 更新余额
     const refreshBalance = async () => {
-      const balanceBN = await state.provider.getBalance(state.address);
-      setState((prev) => ({
-        ...prev,
-        balance: formatEther(balanceBN),
-      }));
+      try {
+        const balanceBN = await state.provider.getBalance(state.address);
+        setState((prev) => ({
+          ...prev,
+          balance: formatEther(balanceBN),
+        }));
+      } catch (err) {
+        // ⭐ 网络切换瞬间的错误可以直接忽略
+        if (err.code === "NETWORK_ERROR") return;
+        throw err;
+      }
     };
 
     refreshBalance();
@@ -157,9 +152,25 @@ const WalletProvider: React.FC<WalletProviderProps> = ({
     window.addEventListener("wallet_accounts_changed", refreshBalance);
     window.addEventListener("wallet_chain_changed", refreshBalance);
 
+    // 更新链的id
+    const handleChainChanged = (chainIdHex: string) => {
+      const newChainId = parseInt(chainIdHex, 16);
+      const newProvider = new ethers.BrowserProvider(window.ethereum);
+      setState((prev) => ({
+        ...prev,
+        chainID: newChainId,
+        provider: newProvider,
+      }));
+    };
+
+    window.ethereum.on("chainChanged", handleChainChanged);
+
     return () => {
       window.removeEventListener("wallet_accounts_changed", refreshBalance);
       window.removeEventListener("wallet_chain_changed", refreshBalance);
+
+      // 移除监听
+      window.ethereum.removeListener("chainChanged", handleChainChanged);
     };
   }, [state.provider, state.address, state.chainID]);
 

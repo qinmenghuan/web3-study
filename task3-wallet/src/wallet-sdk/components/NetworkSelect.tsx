@@ -9,15 +9,17 @@ interface ConnectButtonProps {
 }
 
 const NetworkSelect: React.FC = () => {
-  const { chains, switchChain, isConnected } = useWallet();
+  const { chains, switchChain, isConnected, chainID } = useWallet();
 
   console.log("chains:", chains);
   console.log("isConnected:", isConnected);
+
   const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const targetId = Number(e.target.value);
+    const targetChainId = Number(e.target.value);
     console.log("change item", e.target.value);
+    if (targetChainId === chainID) return;
     try {
-      await switchChain(targetId);
+      await switchChain(targetChainId);
     } catch (err) {
       console.error("switch chain fail:", err);
     }
@@ -25,7 +27,7 @@ const NetworkSelect: React.FC = () => {
 
   return (
     <div>
-      <select onChange={handleChange} disabled={!isConnected}>
+      <select onChange={handleChange} disabled={!isConnected} value={chainID}>
         {chains.map((item) => (
           <option key={item.id} value={item.id}>
             {item.name}
